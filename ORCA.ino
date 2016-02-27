@@ -28,7 +28,9 @@
     
 void setup(){
     //  SD Card Setup
-    File dataFile = SD.open("datalog.txt", FILE_WRITE);
+    int i = 0;
+    while(SD.exists("flight" + i + ".txt")) i++;
+    File dataFile = SD.open("flight" + i + ".txt", FILE_WRITE);
 
     //  Altimeter Setup
     altimeter.begin();
@@ -41,7 +43,7 @@ void loop(){
     double altitude = altimeter.getAltitude();  //  Get altitude
     unsigned long time = millis();              //  Get time in milliseconds since run began
     if(dragOpen){
-        
+        if(shouldClose()) closeDragSystem();
     }else
         for(int i = 0; i < (int)(sizeof tests / sizeof tests[0]); i++)
             if(altitude > (prevApogee * (tests[i][0] / 100)) - altitudeErr
@@ -53,5 +55,14 @@ void loop(){
 }
 
 void openDragSystem(){
-    //  TODO
+    //  TODO (Interface)
 }
+
+void closeDragSystem(){
+    //  TODO (Interface)
+}
+
+boolean shouldClose(){
+    //  TODO (Algorithm)
+}
+
