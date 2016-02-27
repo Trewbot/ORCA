@@ -11,7 +11,7 @@
     #include <SPI.h>
     #include <SD.h>
     #include <SparkFunMPL3115A2.h>
-    #include "I2Cdev.h";
+    //#include "I2Cdev.h";
     File myFile;
     MPL3115A2 altimeter;
 
@@ -28,9 +28,16 @@
     
 void setup(){
     //  SD Card Setup
-    int i = 0;
-    while(SD.exists("flight" + i + ".txt")) i++;
-    File dataFile = SD.open("flight" + i + ".txt", FILE_WRITE);
+    int    i = 0;
+    String filename,
+           extension = ".txt";
+    do{
+        i++;
+        filename = "flight";
+        filename += i;
+        filename += extension;
+    } while(SD.exists(filename));
+    File dataFile = SD.open(filename, FILE_WRITE);
 
     //  Altimeter Setup
     altimeter.begin();
