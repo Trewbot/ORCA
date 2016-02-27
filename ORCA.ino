@@ -4,6 +4,7 @@
  *  
  *  References:
  *  [1] Altimeter data sheet: http://cdn.sparkfun.com/datasheets/Sensors/Pressure/MPL3115A2.pdf
+ *  [2] Altimeter commands: https://learn.sparkfun.com/tutorials/mpl3115a2-pressure-sensor-hookup-guide
  *  
  */
 
@@ -45,8 +46,17 @@ void setup(){
 }
 
 void loop(){
+    //  Gather information
     double altitude = altimeter.readAltitude(); //  Get altitude
     unsigned long time = millis();              //  Get time in milliseconds since run began
+
+    //  Determing velocity and acceleration
+
+    //  Check if burnout
+    
+    //  Check if still on same test
+    
+    //  Open or close drag system
     if(dragOpen){
         if(shouldClose()) closeDragSystem();
     }else
@@ -56,7 +66,8 @@ void loop(){
                 if(!dragOpen) openDragSystem();
                 activeTest = i;
             }
-    delay(1000);  //  Delay based on data aquisition rate. [1]
+
+    delay(600);  //  Delay based on data aquisition rate. [1]
 }
 
 void openDragSystem(){
