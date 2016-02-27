@@ -11,12 +11,11 @@
     #include <SPI.h>
     #include <SD.h>
     #include <SparkFunMPL3115A2.h>
-    File myFile;
     MPL3115A2 altimeter;
 
 //  Drag system setup
     double  prevApogee  = 1000,         //  Previous apogee in meters
-            altitudeErr = 10;           //  Error in the altitude reading
+            altitudeErr = 0.3;          //  Error in the altitude reading [1]
     boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false;        //  Grag system activated
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
@@ -32,10 +31,10 @@ void setup(){
            extension = ".txt";
     do{
         i++;
-        filename = "flight";
+        filename  = "flight";
         filename += i;
         filename += extension;
-    } while(SD.exists(filename));
+    }   while(SD.exists(filename));
     File dataFile = SD.open(filename, FILE_WRITE);
 
     //  Altimeter Setup
@@ -46,7 +45,7 @@ void setup(){
 }
 
 void loop(){
-    double altitude = altimeter.getAltitude();  //  Get altitude
+    double altitude = altimeter.readAltitude(); //  Get altitude
     unsigned long time = millis();              //  Get time in milliseconds since run began
     if(dragOpen){
         if(shouldClose()) closeDragSystem();
