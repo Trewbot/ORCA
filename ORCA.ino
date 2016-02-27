@@ -11,7 +11,6 @@
     #include <SPI.h>
     #include <SD.h>
     #include <SparkFunMPL3115A2.h>
-    //#include "I2Cdev.h";
     File myFile;
     MPL3115A2 altimeter;
 
