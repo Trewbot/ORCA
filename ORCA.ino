@@ -13,6 +13,7 @@
     #include <SD.h>
     #include <SparkFunMPL3115A2.h>
     MPL3115A2 altimeter;
+    File dataFile;
 
 //  Drag system setup
     double  prevApogee  = 1000,         //  Previous apogee in meters
@@ -40,7 +41,7 @@ void setup(){
         filename += i;
         filename += extension;
     }   while(SD.exists(filename));
-    File dataFile = SD.open(filename, FILE_WRITE);
+    dataFile = SD.open(filename, FILE_WRITE);
 
     //  Altimeter Setup
     altimeter.begin();
@@ -81,6 +82,12 @@ void loop(){
                 activeTest = i;
             }
 
+    //  Finish loop
+    dataFile.print("t = ");     dataFile.print(currTime);
+    dataFile.print(", alt = "); dataFile.print(altitude);
+    dataFile.print(", a = ");   dataFile.print(currAcc);
+    dataFile.print(", v = ");   dataFile.print(currVel);
+    dataFile.println();
     delay(600);  //  Delay based on data aquisition rate. [1]
 }
 
