@@ -78,19 +78,17 @@ void loop(){
         burnout = true;
         dataFile.println("BURNOUT");
     }
-    
-    //  Check if still on same test
-    
-    //  Open or close drag system
-    if(dragOpen){
-        if(shouldClose()) closeDragSystem();
-    }else
-        for(int i = 0; i < (int)(sizeof tests / sizeof tests[0]); i++)
-            if(altitude > (prevApogee * (tests[i][0] / 100)) - altitudeErr
-            && altitude < (prevApogee * (tests[i][0] / 100)) + altitudeErr){
-                if(!dragOpen) openDragSystem();
-                activeTest = i;
-            }
+
+    //  Test if should open drag system or update test number
+    for(int i = 0; i < (int)(sizeof tests / sizeof tests[0]); i++)
+        if(altitude > (prevApogee * (tests[i][0] / 100)) - altitudeErr
+        && altitude < (prevApogee * (tests[i][0] / 100)) + altitudeErr){
+            if(!dragOpen) openDragSystem();
+            activeTest = i;
+        }
+
+    //  Test if should close drag system
+    if(dragOpen && shouldClose()) closeDragSystem();
 
     //  Finish loop
     dataFile.print("t = ");     dataFile.print(currTime);
