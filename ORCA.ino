@@ -23,7 +23,9 @@
             prevVel     = 0,
             prevTime    = 0;
     boolean runDrag     = true,         //  Run drag system this run
-            dragOpen    = false;        //  Grag system activated
+            dragOpen    = false,        //  Grag system activated
+            hasFired    = false,        //  If engine has been fired
+            burnout     = false;        //  If engine has burned out
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
                 {50,85},
                 {65,75}
@@ -68,6 +70,14 @@ void loop(){
            prevAcc  = currAcc;
     
     //  Check if burnout
+    if(!hasFired && currAcc > 0){ //  If accelerating then say engine has fired
+        hasFired = true;
+        dataFile.println("ENGINE FIRED");
+    }
+    if(hasFired && currAcc < 8){  //  If decelerating after fired say burnout
+        burnout = true;
+        dataFile.println("BURNOUT");
+    }
     
     //  Check if still on same test
     
