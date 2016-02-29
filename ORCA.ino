@@ -16,7 +16,11 @@
 
 //  Drag system setup
     double  prevApogee  = 1000,         //  Previous apogee in meters
-            altitudeErr = 0.3;          //  Error in the altitude reading [1]
+            altitudeErr = 0.3,          //  Error in the altitude reading [1]
+            prevAlt     = 0,            //  Set last loop variables
+            prevAcc     = 0,
+            prevVel     = 0,
+            prevTime    = 0;
     boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false;        //  Grag system activated
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
@@ -48,10 +52,20 @@ void setup(){
 void loop(){
     //  Gather information
     double altitude = altimeter.readAltitude(); //  Get altitude
-    unsigned long time = millis();              //  Get time in milliseconds since run began
+    unsigned long currTime = millis() / 1000;   //  Get time in seconds since run began
 
     //  Determing velocity and acceleration
-
+    double deltTime = currTime - prevTime,
+           deltAlt  = altitude - prevAlt,
+           currVel  = deltAlt  / deltTime,
+           deltVel  = currVel  - prevVel,
+           currAcc  = deltVel  / deltTime;
+    //  Update previous variables
+           prevAlt  = altitude;
+           prevTime = currTime;
+           prevVel  = currVel;
+           prevAcc  = currAcc;
+    
     //  Check if burnout
     
     //  Check if still on same test
