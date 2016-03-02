@@ -4,7 +4,7 @@
  *  
  *  References:
  *  [1] Altimeter data sheet: http://cdn.sparkfun.com/datasheets/Sensors/Pressure/MPL3115A2.pdf
- *  [2] Altimeter commands: https://learn.sparkfun.com/tutorials/mpl3115a2-pressure-sensor-hookup-guide
+ *  [2] Altimeter commands:   https://learn.sparkfun.com/tutorials/mpl3115a2-pressure-sensor-hookup-guide
  *  
  */
 
@@ -30,13 +30,15 @@
                 {50,85},
                 {65,75}
             };
-    int     activeTest  = 0;            //  Currently running test
+    int     activeTest  = 0,            //  Currently running test
+            sdPin       = 10;           //  SD Card Pin
+    String  filename,
+            extension   = ".txt";
     
 void setup(){
     //  SD Card Setup
     int    i = 0;
-    String filename,
-           extension = ".txt";
+    SD.begin(sdPin);
     do{
         i++;
         filename  = "flight";
@@ -57,6 +59,9 @@ void loop(){
     double altitude = altimeter.readAltitude(); //  Get altitude
     unsigned long currTime = millis() / 1000;   //  Get time in seconds since run began
 
+    //  Open file
+    SD.open(filename);
+    
     //  Determing velocity and acceleration
     double deltTime = currTime - prevTime,
            deltAlt  = altitude - prevAlt,
@@ -96,6 +101,7 @@ void loop(){
     dataFile.print(", a = ");   dataFile.print(currAcc);
     dataFile.print(", v = ");   dataFile.print(currVel);
     dataFile.println();
+    dataFile.close();
     delay(600);  //  Delay based on data aquisition rate. [1]
 }
 
