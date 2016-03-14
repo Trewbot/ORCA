@@ -11,12 +11,14 @@
 //  Include Libraries
     #include <SPI.h>
     #include <SD.h>
+    #include <Servo.h>
     #include <SparkFunMPL3115A2.h>
     MPL3115A2 altimeter;
+    Servo servoOne;
     File dataFile;
 
 //  Drag system setup
-    double  prevApogee  = 1000,         //  Previous apogee in meters
+    long    prevApogee  = 1000,         //  Previous apogee in meters
             altitudeErr = 0.3,          //  Error in the altitude reading [1]
             prevAlt     = 0,            //  Set last loop variables
             prevAcc     = 0,
@@ -25,13 +27,15 @@
     boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
-            burnout     = false;        //  If engine has burned out
+            burnout     = false,        //  If engine has burned out
+            test        = true;         //  Test variable
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
                 {50,85},
                 {65,75}
             };
     int     activeTest  = 0,            //  Currently running test
-            sdPin       = 10;           //  SD Card Pin
+            sdPin       = 10,           //  SD Card Pin
+            servoPin    = 9;
     String  filename,
             extension   = ".txt";
     
@@ -47,23 +51,28 @@ void setup(){
     }   while(SD.exists(filename));
     dataFile = SD.open(filename, FILE_WRITE);
 
+    //  Servo Setup
+    servoOne.attach(servoPin);
+    
     //  Altimeter Setup
     altimeter.begin();
     altimeter.setModeAltimeter();       //  Measures in meters
     altimeter.setOversampleRate(7);     //  Set Oversample to the recommended 128
     altimeter.enableEventFlags();       //  Enable all three pressure and temp event flags
+    prevAlt = altimeter.readAltitude();
 }
 
 void loop(){
     //  Gather information
     double altitude = altimeter.readAltitude(); //  Get altitude
-    unsigned long currTime = millis() / 1000;   //  Get time in seconds since run began
+    unsigned long currTime = millis();   //  Get time in seconds since run began
 
     //  Open file
-    SD.open(filename);
+    //  SD.open(filename);
+    dataFile = SD.open(filename, FILE_WRITE);
     
     //  Determing velocity and acceleration
-    double deltTime = currTime - prevTime,
+    long   deltTime = currTime - prevTime,
            deltAlt  = altitude - prevAlt,
            currVel  = deltAlt  / deltTime,
            deltVel  = currVel  - prevVel,
@@ -79,7 +88,7 @@ void loop(){
         hasFired = true;
         dataFile.println("ENGINE FIRED");
     }
-    if(hasFired && currAcc < 8){  //  If decelerating after fired say burnout
+    if(hasFired && !burnout && currAcc < 0){  //  If decelerating after fired say burnout
         burnout = true;
         dataFile.println("BURNOUT");
     }
@@ -95,22 +104,25 @@ void loop(){
     //  Test if should close drag system
     if(dragOpen && shouldClose()) closeDragSystem();
 
+    servoOne.write(135);
+    
     //  Finish loop
     dataFile.print("t = ");     dataFile.print(currTime);
+    dataFile.print(", dt = ");  dataFile.print(deltTime);
     dataFile.print(", alt = "); dataFile.print(altitude);
-    dataFile.print(", a = ");   dataFile.print(currAcc);
     dataFile.print(", v = ");   dataFile.print(currVel);
+    dataFile.print(", a = ");   dataFile.print(currAcc);
     dataFile.println();
-    dataFile.close();
+    dataFile.close(); // Maybe just dataFile.flush();
     delay(600);  //  Delay based on data aquisition rate. [1]
 }
 
 void openDragSystem(){
-    //  TODO (Interface)
+    servoOne.write(45);
 }
 
 void closeDragSystem(){
-    //  TODO (Interface)
+    servoOne.write(135);
 }
 
 boolean shouldClose(){
