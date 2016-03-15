@@ -28,7 +28,7 @@
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
             burnout     = false,        //  If engine has burned out
-            apgee       = false,        //  If apogee has been reached
+            apogee      = false,        //  If apogee has been reached
             test        = true;         //  Test variable
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
                 {50,85},
@@ -36,7 +36,9 @@
             };
     int     activeTest  = 0,            //  Currently running test
             sdPin       = 10,           //  SD Card Pin
-            servoPin    = 9;
+            servoPin    = 9,            //  Servo pin
+            sweep       = 0,
+            sweeps      = 3;            //  Amount of intitial sweeps
     String  filename,
             extension   = ".txt";
     
@@ -96,7 +98,7 @@ void loop(){
     if(burnout && !apogee && currVel < -0.0000001){
         apogee = true;
         dataFile.println("APOGEE");
-        apogeeFile = SD.open("apogee.txt",FILE_WRITE);
+        File apogeeFile = SD.open("apogee.txt",FILE_WRITE);
         apogeeFile.println(altitude);
         apogeeFile.close();
     }
@@ -112,17 +114,17 @@ void loop(){
     //  Test if should close drag system
     if(dragOpen && shouldClose()) closeDragSystem();
 
-    if(currTime < 5000){
-        if(test)  openDragSystem();
-        else      closeDragSystem();
+    if(sweep < sweeps){
+        if(test){
+            closeDragSystem();
+            sweep++;
+        } else openDragSystem();
         test = !test;
-    } else {
-        if(!hasFired) closeDragSystem();
     }
     
     //  Finish loop
-    dataFile.print("t = ");     dataFile.print(currTime,10);
-    dataFile.print(", dt = ");  dataFile.print(deltTime,10);
+    dataFile.print("t = ");     dataFile.print(currTime);
+    dataFile.print(", dt = ");  dataFile.print(deltTime);
     dataFile.print(", alt = "); dataFile.print(altitude,10);
     dataFile.print(", v = ");   dataFile.print(currVel,10);
     dataFile.print(", a = ");   dataFile.print(currAcc,10);
