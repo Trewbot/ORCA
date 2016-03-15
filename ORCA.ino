@@ -28,6 +28,7 @@
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
             burnout     = false,        //  If engine has burned out
+            apgee       = false,        //  If apogee has been reached
             test        = true;         //  Test variable
     int     tests[][2]  = {             //  Array of tests: {precent to run test at, percent to aim for}
                 {50,85},
@@ -65,7 +66,7 @@ void setup(){
 void loop(){
     //  Gather information
     double altitude = altimeter.readAltitude();         //  Get altitude
-    unsigned long currTime = millis();     //  Get time in seconds since run began
+    unsigned long currTime = millis();                  //  Get time in seconds since run began
 
     //  Open file
     //  SD.open(filename);
@@ -88,9 +89,16 @@ void loop(){
         hasFired = true;
         dataFile.println("ENGINE FIRED");
     }
-    if(hasFired && !burnout && currAcc < 0){  //  If decelerating after fired say burnout
+    if(hasFired && !burnout && currAcc < -0.000009){  //  If decelerating after fired say burnout
         burnout = true;
         dataFile.println("BURNOUT");
+    }
+    if(burnout && !apogee && currVel < -0.0000001){
+        apogee = true;
+        dataFile.println("APOGEE");
+        apogeeFile = SD.open("apogee.txt",FILE_WRITE);
+        apogeeFile.println(altitude);
+        apogeeFile.close();
     }
 
     //  Test if should open drag system or update test number
