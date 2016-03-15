@@ -64,15 +64,15 @@ void setup(){
 
 void loop(){
     //  Gather information
-    double altitude = altimeter.readAltitude(); //  Get altitude
-    unsigned long currTime = millis();   //  Get time in seconds since run began
+    double altitude = altimeter.readAltitude();         //  Get altitude
+    unsigned long currTime = millis();     //  Get time in seconds since run began
 
     //  Open file
     //  SD.open(filename);
     dataFile = SD.open(filename, FILE_WRITE);
     
     //  Determing velocity and acceleration
-    long   deltTime = currTime - prevTime,
+    float  deltTime = currTime - prevTime,
            deltAlt  = altitude - prevAlt,
            currVel  = deltAlt  / deltTime,
            deltVel  = currVel  - prevVel,
@@ -104,17 +104,23 @@ void loop(){
     //  Test if should close drag system
     if(dragOpen && shouldClose()) closeDragSystem();
 
-    servoOne.write(135);
+    if(currTime < 5000){
+        if(test)  openDragSystem();
+        else      closeDragSystem();
+        test = !test;
+    } else {
+        if(!hasFired) closeDragSystem();
+    }
     
     //  Finish loop
-    dataFile.print("t = ");     dataFile.print(currTime);
-    dataFile.print(", dt = ");  dataFile.print(deltTime);
-    dataFile.print(", alt = "); dataFile.print(altitude);
-    dataFile.print(", v = ");   dataFile.print(currVel);
-    dataFile.print(", a = ");   dataFile.print(currAcc);
+    dataFile.print("t = ");     dataFile.print(currTime,10);
+    dataFile.print(", dt = ");  dataFile.print(deltTime,10);
+    dataFile.print(", alt = "); dataFile.print(altitude,10);
+    dataFile.print(", v = ");   dataFile.print(currVel,10);
+    dataFile.print(", a = ");   dataFile.print(currAcc,10);
     dataFile.println();
     dataFile.close(); // Maybe just dataFile.flush();
-    delay(600);  //  Delay based on data aquisition rate. [1]
+    delay(600);       // Delay based on data aquisition rate. [1]
 }
 
 void openDragSystem(){
