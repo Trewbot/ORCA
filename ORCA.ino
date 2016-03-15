@@ -53,7 +53,11 @@ void setup(){
         filename += extension;
     }   while(SD.exists(filename));
     dataFile = SD.open(filename, FILE_WRITE);
-
+    dataFile.println("Time\tChange in time\tAltitude\tVelocity\tAcceleration");
+    dataFile.println("ms\tms\tm\tm/s\tm/s*s");
+    dataFile.println();
+    dataFile.close();
+    
     //  Servo Setup
     servoOne.attach(servoPin);
     
@@ -85,19 +89,26 @@ void loop(){
            prevTime = currTime;
            prevVel  = currVel;
            prevAcc  = currAcc;
+
+    //  Log data
+                          dataFile.print(currTime);
+    dataFile.print("\t"); dataFile.print(deltTime);
+    dataFile.print("\t"); dataFile.print(altitude,5);
+    dataFile.print("\t"); dataFile.print(currVel*1000,5);
+    dataFile.print("\t"); dataFile.print(currAcc*1000000,5);
     
     //  Check if burnout
     if(!hasFired && currAcc > 0){ //  If accelerating then say engine has fired
         hasFired = true;
-        dataFile.println("ENGINE FIRED");
+        dataFile.print("\tENGINE FIRED");
     }
     if(hasFired && !burnout && currAcc < -0.000009){  //  If decelerating after fired say burnout
         burnout = true;
-        dataFile.println("BURNOUT");
+        dataFile.print("\tBURNOUT");
     }
     if(burnout && !apogee && currVel < -0.0000001){
         apogee = true;
-        dataFile.println("APOGEE");
+        dataFile.println("\tAPOGEE");
         File apogeeFile = SD.open("apogee.txt",FILE_WRITE);
         apogeeFile.println(altitude);
         apogeeFile.close();
@@ -114,6 +125,7 @@ void loop(){
     //  Test if should close drag system
     if(dragOpen && shouldClose()) closeDragSystem();
 
+    //  Initialization sweeps
     if(sweep < sweeps){
         if(test){
             closeDragSystem();
@@ -123,11 +135,6 @@ void loop(){
     }
     
     //  Finish loop
-    dataFile.print("t = ");     dataFile.print(currTime);
-    dataFile.print(", dt = ");  dataFile.print(deltTime);
-    dataFile.print(", alt = "); dataFile.print(altitude,10);
-    dataFile.print(", v = ");   dataFile.print(currVel,10);
-    dataFile.print(", a = ");   dataFile.print(currAcc,10);
     dataFile.println();
     dataFile.close(); // Maybe just dataFile.flush();
     delay(600);       // Delay based on data aquisition rate. [1]
