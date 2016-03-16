@@ -98,7 +98,7 @@ void loop(){
     dataFile.print("\t"); dataFile.print(currAcc*1000000,5);
     
     //  Check if burnout
-    if(!hasFired && currAcc > 0){ //  If accelerating then say engine has fired
+    if(!hasFired && currAcc > 0.000006){ //  If accelerating then say engine has fired
         hasFired = true;
         dataFile.print("\tENGINE FIRED");
     }
@@ -106,7 +106,7 @@ void loop(){
         burnout = true;
         dataFile.print("\tBURNOUT");
     }
-    if(burnout && !apogee && currVel < -0.0000001){
+    if(burnout && !apogee && currVel < -0.0001){
         apogee = true;
         dataFile.println("\tAPOGEE");
         File apogeeFile = SD.open("apogee.txt",FILE_WRITE);
@@ -126,7 +126,7 @@ void loop(){
     if(dragOpen && shouldClose()) closeDragSystem();
 
     //  Initialization sweeps
-    if(sweep < sweeps){
+    if(sweep <= sweeps){
         if(test){
             closeDragSystem();
             sweep++;
@@ -145,7 +145,7 @@ void openDragSystem(){
 }
 
 void closeDragSystem(){
-    servoOne.write(135);
+    servoOne.write(122.5);
 }
 
 boolean shouldClose(){
