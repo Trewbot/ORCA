@@ -12,6 +12,7 @@
     #include <SPI.h>
     #include <SD.h>
     #include <Servo.h>
+    #include <math.h>
     #include <SparkFunMPL3115A2.h>
     MPL3115A2 altimeter;
     Servo servoOne;
@@ -23,7 +24,12 @@
             prevAlt     = 0,            //  Set last loop variables
             prevAcc     = 0,
             prevVel     = 0,
-            prevTime    = 0;
+            prevTime    = 0,
+            crossSecArea = 0.01035,     //  Cross sectional area in meters squared
+            gravity     = 9.81,         //  Acceleration due to gravity in meteres per second squared
+            coeffDrag   = 0.15,         //  Coefficient of drag, estimated???                           TODO
+            rho         = 1,            //  Density of the medium???                                    TODO
+            mass        = 1;            //  Mass of the rocket after fuel is spent in kilograms         TODO
     boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
@@ -148,7 +154,9 @@ void closeDragSystem(){
     servoOne.write(122.5);
 }
 
-boolean shouldClose(){
-    //  TODO (Algorithm)
+boolean shouldClose(altitude, velocity, target){
+    long  velTermSq = (2 * gravity * mass) / (coeffDrag * rho * crossSecArea),
+          maxAlt    = altitude + ((velTermSq / 2 * gravity) * log((velTermSq + pow(velocity, 2)) / velTermSq));
+    return maxAlt <= target * 1.05;
 }
 
