@@ -19,18 +19,18 @@
     File dataFile;
 
 //  Drag system setup
-    long    prevApogee  = 1000,         //  Previous apogee in meters
+    long    prevApogee  = 1666.9375,    //  Previous apogee in meters
             altitudeErr = 0.3,          //  Error in the altitude reading [1]
             prevAlt     = 0,            //  Set last loop variables
             prevAcc     = 0,
             prevVel     = 0,
             prevTime    = 0,
             crossSecArea = 0.01035,     //  Cross sectional area in meters squared
-            gravity     = 9.81,         //  Acceleration due to gravity in meteres per second squared
+            gravity     = 0.00000981,   //  Acceleration due to gravity in meteres per second squared
             coeffDrag   = 0.15,         //  Coefficient of drag, estimated???                           TODO
-            rho         = 1,            //  Density of the medium???                                    TODO
-            mass        = 1;            //  Mass of the rocket after fuel is spent in kilograms         TODO
-    boolean runDrag     = true,         //  Run drag system this run
+            rho         = 1.225,        //  Density of the medium kg/m2                                 TODO
+            mass        = 5.094;        //  Mass of the rocket after fuel is spent in kilograms         TODO
+    boolean runDrag     = true,        //  Run drag system this run
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
             burnout     = false,        //  If engine has burned out
@@ -129,7 +129,7 @@ void loop(){
         }
 
     //  Test if should close drag system
-    if(dragOpen && shouldClose()) closeDragSystem();
+    if(dragOpen && shouldClose(altitude,currVel,(tests[activeTest][1]/100)*prevApogee)) closeDragSystem();
 
     //  Initialization sweeps
     if(sweep <= sweeps){
@@ -154,7 +154,7 @@ void closeDragSystem(){
     servoOne.write(122.5);
 }
 
-boolean shouldClose(altitude, velocity, target){
+boolean shouldClose(long altitude, long velocity, long target){
     long  velTermSq = (2 * gravity * mass) / (coeffDrag * rho * crossSecArea),
           maxAlt    = altitude + ((velTermSq / 2 * gravity) * log((velTermSq + pow(velocity, 2)) / velTermSq));
     return maxAlt <= target * 1.05;
