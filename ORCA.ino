@@ -26,11 +26,11 @@
             prevVel     = 0,
             prevTime    = 0,
             crossSecArea = 0.01035,     //  Cross sectional area in meters squared
-            gravity     = 0.00000981,   //  Acceleration due to gravity in meteres per second squared
+            gravity     = 9.81,         //  Acceleration due to gravity in meteres per second squared
             coeffDrag   = 0.15,         //  Coefficient of drag, estimated???                           TODO
             rho         = 1.225,        //  Density of the medium kg/m2                                 TODO
             mass        = 5.094;        //  Mass of the rocket after fuel is spent in kilograms         TODO
-    boolean runDrag     = true,        //  Run drag system this run
+    boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
             burnout     = false,        //  If engine has burned out
@@ -60,7 +60,7 @@ void setup(){
     }   while(SD.exists(filename));
     dataFile = SD.open(filename, FILE_WRITE);
     dataFile.println("Time\tChange in time\tAltitude\tVelocity\tAcceleration");
-    dataFile.println("ms\tms\tm\tm/s\tm/s*s");
+    dataFile.println("s\ts\tm\tm/s\tm/s*s");
     dataFile.println();
     dataFile.close();
     
@@ -70,22 +70,22 @@ void setup(){
     //  Altimeter Setup
     altimeter.begin();
     altimeter.setModeAltimeter();       //  Measures in meters
-    altimeter.setOversampleRate(7);     //  Set Oversample to the recommended 128
+    altimeter.setOversampleRate(0);     //  Set Oversample to 0
     altimeter.enableEventFlags();       //  Enable all three pressure and temp event flags
-    prevAlt = altimeter.readAltitude();
+    prevAlt = altimeter.readAltitude(); //  Required for setup
 }
 
 void loop(){
     //  Gather information
     double altitude = altimeter.readAltitude();         //  Get altitude
-    unsigned long currTime = millis();                  //  Get time in seconds since run began
+    unsigned long currTime = millis();                  //  Get time in ms since run began
 
     //  Open file
     //  SD.open(filename);
     dataFile = SD.open(filename, FILE_WRITE);
     
     //  Determing velocity and acceleration
-    float  deltTime = currTime - prevTime,
+    long   deltTime = (currTime - prevTime) / 1000.0,
            deltAlt  = altitude - prevAlt,
            currVel  = deltAlt  / deltTime,
            deltVel  = currVel  - prevVel,
@@ -100,19 +100,19 @@ void loop(){
                           dataFile.print(currTime);
     dataFile.print("\t"); dataFile.print(deltTime);
     dataFile.print("\t"); dataFile.print(altitude,5);
-    dataFile.print("\t"); dataFile.print(currVel*1000,5);
-    dataFile.print("\t"); dataFile.print(currAcc*1000000,5);
+    dataFile.print("\t"); dataFile.print(currVel,5);
+    dataFile.print("\t"); dataFile.print(currAcc,5);
     
     //  Check if burnout
-    if(!hasFired && currAcc > 0.000006){ //  If accelerating then say engine has fired
+    if(!hasFired && (currAcc > 50 || altitude > 400)){ //  If accelerating then say engine has fired
         hasFired = true;
         dataFile.print("\tENGINE FIRED");
     }
-    if(hasFired && !burnout && currAcc < -0.000009){  //  If decelerating after fired say burnout
+    if(hasFired && !burnout && currAcc < -9){  //  If decelerating after fired say burnout
         burnout = true;
         dataFile.print("\tBURNOUT");
     }
-    if(burnout && !apogee && currVel < -0.0001){
+    if(burnout && !apogee && currVel < 0){
         apogee = true;
         dataFile.println("\tAPOGEE");
         File apogeeFile = SD.open("apogee.txt",FILE_WRITE);
@@ -143,7 +143,6 @@ void loop(){
     //  Finish loop
     dataFile.println();
     dataFile.close(); // Maybe just dataFile.flush();
-    delay(600);       // Delay based on data aquisition rate. [1]
 }
 
 void openDragSystem(){
