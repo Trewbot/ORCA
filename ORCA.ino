@@ -29,7 +29,8 @@
             gravity     = 9.81,         //  Acceleration due to gravity in meteres per second squared
             coeffDrag   = 0.15,         //  Coefficient of drag, estimated???                           TODO
             rho         = 1.225,        //  Density of the medium kg/m2                                 TODO
-            mass        = 5.094;        //  Mass of the rocket after fuel is spent in kilograms         TODO
+            mass        = 5.094,        //  Mass of the rocket after fuel is spent in kilograms         TODO
+            delayStart  = 99999999;
     boolean runDrag     = true,         //  Run drag system this run
             dragOpen    = false,        //  Grag system activated
             hasFired    = false,        //  If engine has been fired
@@ -47,6 +48,7 @@
             sweeps      = 3;            //  Amount of intitial sweeps
     String  filename,
             extension   = ".txt";
+    double  ground      = 0;
     
 void setup(){
     //  SD Card Setup
@@ -73,11 +75,16 @@ void setup(){
     altimeter.setOversampleRate(0);     //  Set Oversample to 0
     altimeter.enableEventFlags();       //  Enable all three pressure and temp event flags
     prevAlt = altimeter.readAltitude(); //  Required for setup
+    delay(100);
+    ground = altimeter.readAltitude();
+
+    Serial.begin(9600);
 }
 
 void loop(){
     //  Gather information
-    double altitude = altimeter.readAltitude();         //  Get altitude
+    double altitude = altimeter.readAltitude() - ground;         //  Get altitude
+    Serial.println(altitude);
     unsigned long currTime = millis();                  //  Get time in ms since run began
 
     //  Open file
@@ -98,41 +105,27 @@ void loop(){
 
     //  Log data
                           dataFile.print(currTime);
-    dataFile.print("\t"); dataFile.print(deltTime);
+    dataFile.print("\t"); dataFile.print(deltTime,5);
     dataFile.print("\t"); dataFile.print(altitude,5);
     dataFile.print("\t"); dataFile.print(currVel,5);
     dataFile.print("\t"); dataFile.print(currAcc,5);
     
     //  Check if burnout
-    if(!hasFired && (currAcc > 50 || altitude > 400)){ //  If accelerating then say engine has fired
+    if(!hasFired && altitude > 30){ //  If accelerating then say engine has fired
         hasFired = true;
+        Serial.print("Fired");
+        delayStart = millis();
         dataFile.print("\tENGINE FIRED");
     }
-    if(hasFired && !burnout && currAcc < -9){  //  If decelerating after fired say burnout
+    if(hasFired && !burnout && millis() >= delayStart + 4100){  //  If decelerating after fired say burnout
         burnout = true;
         dataFile.print("\tBURNOUT");
+        openDragSystem();
     }
-    if(burnout && !apogee && currVel < 0){
-        apogee = true;
-        dataFile.println("\tAPOGEE");
-        File apogeeFile = SD.open("apogee.txt",FILE_WRITE);
-        apogeeFile.println(altitude);
-        apogeeFile.close();
-    }
-
-    //  Test if should open drag system or update test number
-    for(int i = 0; i < (int)(sizeof tests / sizeof tests[0]); i++)
-        if(altitude > (prevApogee * (tests[i][0] / 100)) - altitudeErr
-        && altitude < (prevApogee * (tests[i][0] / 100)) + altitudeErr){
-            if(!dragOpen) openDragSystem();
-            activeTest = i;
-        }
-
-    //  Test if should close drag system
-    if(dragOpen && shouldClose(altitude,currVel,(tests[activeTest][1]/100)*prevApogee)) closeDragSystem();
 
     //  Initialization sweeps
     if(sweep <= sweeps){
+        delay(600);
         if(test){
             closeDragSystem();
             sweep++;
@@ -151,11 +144,5 @@ void openDragSystem(){
 
 void closeDragSystem(){
     servoOne.write(122.5);
-}
-
-boolean shouldClose(long altitude, long velocity, long target){
-    long  velTermSq = (2 * gravity * mass) / (coeffDrag * rho * crossSecArea),
-          maxAlt    = altitude + ((velTermSq / 2 * gravity) * log((velTermSq + pow(velocity, 2)) / velTermSq));
-    return maxAlt <= target * 1.05;
 }
 
