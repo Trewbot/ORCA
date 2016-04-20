@@ -45,10 +45,15 @@
             sdPin       = 10,           //  SD Card Pin
             servoPin    = 9,            //  Servo pin
             sweep       = 0,
-            sweeps      = 3;            //  Amount of intitial sweeps
+            sweeps      = 3,            //  Amount of intitial sweeps
+            target      = 1172;         //  Target altitude (2nd launch)
     String  filename,
             extension   = ".txt";
-    double  ground      = 0;
+    double  ground      = 0,
+            A           = 5.12,         //constants for curve fit A-D
+            B           = 0.34,
+            C           = 14.15,
+            D           = 1.57;
     
 void setup(){
     //  SD Card Setup
@@ -79,11 +84,19 @@ void setup(){
     ground = altimeter.readAltitude();
 
     Serial.begin(9600);
-}
+
+    //  Initialization sweeps
+  for(sweeps;sweep<sweeps; sweep++){
+       openDragSystem();
+       delay(500);               //wait for arms to extend
+       closeDragSystem();
+       delay(500);              //wait for arms to retract
+       }
+}//end setup
 
 void loop(){
     //  Gather information
-    double altitude = altimeter.readAltitude() - ground;         //  Get altitude
+    double altitude = altimeter.readAltitude() - ground;         //  Get altitude, subtract ground alt
     Serial.println(altitude);
     unsigned long currTime = millis();                  //  Get time in ms since run began
 
@@ -111,27 +124,25 @@ void loop(){
     dataFile.print("\t"); dataFile.print(currAcc,5);
     
     //  Check if burnout
-    if(!hasFired && altitude > 30){ //  If accelerating then say engine has fired
+    if(!hasFired && (altitude > 30)){ // engine fired if change in alt >30
         hasFired = true;
         Serial.print("Fired");
         delayStart = millis();
         dataFile.print("\tENGINE FIRED");
     }
-    if(hasFired && !burnout && millis() >= delayStart + 4100){  //  If decelerating after fired say burnout
+    if(hasFired && !burnout && millis() >= (delayStart + 4100)){  //  Burnout if 4.1 sec past ignition
         burnout = true;
         dataFile.print("\tBURNOUT");
         openDragSystem();
+        ORCA(currVel);
     }
 
-    //  Initialization sweeps
-    if(sweep <= sweeps){
-        delay(600);
-        if(test){
-            closeDragSystem();
-            sweep++;
-        } else openDragSystem();
-        test = !test;
-    }
+    //****BEGIN FAILSAFE*****
+    if(!hasFired && (currVel>100) && (altitude>1220))           //TODO: set parameters
+      openDragSystem();
+    if(!burnout && (currVel<30) && (altitude>(target-5)))                                 
+      closeDragSystem();
+    //****END FAILSAFE****
     
     //  Finish loop
     dataFile.println();
@@ -144,5 +155,11 @@ void openDragSystem(){
 
 void closeDragSystem(){
     servoOne.write(122.5);
+}
+
+bool ORCA(long velocity){ //returns true if drag system should retract
+  double expectedApogee = A + B*pow(abs(velocity-C),D);
+  if(target>expectedApogee)
+  return false;
 }
 
